@@ -74,7 +74,11 @@ const editFavoriteField = async (req, res, next) => {
       req.body,
       { new: true }
     );
-
+    if (!result) {
+      return res
+        .status(400)
+        .json({ message: `missing field favorite or invalid ID` });
+    }
     res.json(result);
   } catch (error) {
     next(error);
