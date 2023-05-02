@@ -67,9 +67,29 @@ const logout = async (req, res) => {
   res.status(204);
 };
 
+const subscriptionUpdate = async (req, res, next) => {
+  try {
+    const { contactId } = req.params;
+
+    if (JSON.stringify(req.body) === "{}") {
+      return res.status(400).json({ message: `missing field "subscription"` });
+    }
+    const result = await User.findByIdAndUpdate({ _id: contactId }, req.body, {
+      new: true,
+    });
+    if (!result) {
+      return res.status(400).json({ message: `Not found` });
+    }
+    res.json(`Your subscription updated to ${req.body.subscription}`);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register: ctrlWrapper(register),
   login: ctrlWrapper(login),
   getCurrent: ctrlWrapper(getCurrent),
   logout: ctrlWrapper(logout),
+  subscriptionUpdate: ctrlWrapper(subscriptionUpdate),
 };

@@ -39,9 +39,20 @@ const userLoginSchema = Joi.object({
   password: Joi.string().required().min(6),
 });
 
+const subscriptionUpdateSchema = Joi.object({
+  subscription: Joi.string()
+    .valid("starter", "pro", "business")
+    .required()
+    .messages({
+      "any.required": "missing field subscription",
+      "any.only": "subscription must be one of 'starter', 'pro' or 'business'",
+    }),
+});
+
 const schemas = {
   userLoginSchema,
   userRegisterSchema,
+  subscriptionUpdateSchema,
 };
 
 userSchema.post("save", handleMongooseError);
