@@ -1,10 +1,14 @@
+const fs = require("fs/promises");
+const path = require("path");
 const ctrlWrapper = require("../utils/ctrlWrapper");
 
 const { Contact } = require("../models/contact");
+const avatarDir = path.resolve("public", "avatars");
 
 const getAllContacts = async (req, res, next) => {
   try {
     const { _id: owner } = req.user;
+
     const { page = 1, limit = 20, favorite } = req.query;
     const skip = (page - 1) * limit;
     const result = await Contact.find(
@@ -14,7 +18,8 @@ const getAllContacts = async (req, res, next) => {
         skip,
         limit,
       }
-    ).populate("owner", "name email");
+    ).populate("owner", "name number");
+
     res.json(result);
   } catch (error) {
     next(error);
@@ -33,8 +38,13 @@ const getContactById = async (req, res, next) => {
 
 const addNewContact = async (req, res, next) => {
   try {
+    const { path: tempUpload, filename } = req.file;
+    const resultUpload = path.join(avatarDir, filename);
+    await fs.rename(tempUpload, resultUpload);
     const { _id: owner } = req.user;
-    const result = await Contact.create({ ...req.body, owner });
+    const avatar = path.join("avatars", filename);
+    const result = await Contact.create({ ...req.body, avatar, owner });
+
     res.status(201).json(result);
   } catch (error) {
     next(error);
