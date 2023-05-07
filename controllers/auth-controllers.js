@@ -2,9 +2,14 @@ const ctrlWrapper = require("../utils/ctrlWrapper");
 const { HttpError, createToken } = require("../helpers");
 const { User } = require("../models/user");
 const bcrypt = require("bcrypt");
+const fs = require("fs/promises");
+const path = require("path");
+const gravatar = require("gravatar");
+const userAvatarDir = path.resolve("public", "userAvatar");
 
 const register = async (req, res) => {
   const { email, password } = req.body;
+  console.log("gravatar.url(email); -->", gravatar.url(email));
 
   const user = await User.findOne({ email });
   if (user) {
@@ -12,17 +17,23 @@ const register = async (req, res) => {
   }
 
   const hashPassword = await bcrypt.hash(password, 10);
+  const userAvatar = gravatar.url(email);
+  const newUser = await User.create({
+    ...req.body,
+    password: hashPassword,
+    avatarURL: userAvatar,
+  });
 
-  const newUser = await User.create({ ...req.body, password: hashPassword });
   const token = createToken(newUser);
 
-  await User.findByIdAndUpdate(newUser._id, { token });
+  await User.findByIdAndUpdate(newUser._id, { token, avatarURL: userAvatar });
 
   res.status(201).json({
     token,
     user: {
       email: newUser.email,
       name: newUser.name,
+      avatarURL: newUser.avatarURL,
     },
   });
 };
@@ -53,12 +64,13 @@ const login = async (req, res) => {
 };
 
 const getCurrent = async (req, res) => {
-  const { email, name, token } = req.user;
+  const { email, name, token, userAvatar } = req.user;
 
   res.json({
     email,
     name,
     token,
+    userAvatar,
   });
 };
 
@@ -66,7 +78,7 @@ const logout = async (req, res) => {
   const { _id } = req.user;
 
   await User.findByIdAndUpdate(_id, { token: "" });
-  res.status(204);
+  res.status(204).send();
 };
 
 const subscriptionUpdate = async (req, res, next) => {
@@ -88,10 +100,38 @@ const subscriptionUpdate = async (req, res, next) => {
   }
 };
 
+const avatarUpdate = async (req, res, next) => {
+  try {
+    const { path: tempUpload, filename } = req.file;
+    const resultUpload = path.join(userAvatarDir, filename);
+    await fs.rename(tempUpload, resultUpload);
+
+    const { _id } = req.user;
+
+    const avatarURL = path.join("userAvatar", filename);
+    const result = await User.findByIdAndUpdate(
+      { _id },
+      { avatarURL },
+      {
+        new: true,
+      }
+    );
+    if (!result) {
+      return res.status(401).json({ message: `Not authorized` });
+    }
+    res.json({
+      avatarURL,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register: ctrlWrapper(register),
   login: ctrlWrapper(login),
   getCurrent: ctrlWrapper(getCurrent),
   logout: ctrlWrapper(logout),
   subscriptionUpdate: ctrlWrapper(subscriptionUpdate),
+  avatarUpdate: ctrlWrapper(avatarUpdate),
 };

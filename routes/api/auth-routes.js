@@ -4,7 +4,7 @@ const authController = require("../../controllers/auth-controllers");
 const router = express.Router();
 const { validateBody } = require("../../utils/validateBody");
 const { schemas } = require("../../models/user");
-const { authenticate } = require("../../middlewares");
+const { authenticate, upload } = require("../../middlewares");
 
 router.post(
   "/register",
@@ -27,6 +27,13 @@ router.patch(
   authenticate,
   validateBody(schemas.subscriptionUpdateSchema),
   authController.subscriptionUpdate
+);
+
+router.patch(
+  "/avatars",
+  upload.single("avatarURL"),
+  authenticate,
+  authController.avatarUpdate
 );
 
 module.exports = router;
