@@ -1,19 +1,15 @@
 const ctrlWrapper = require("../utils/ctrlWrapper");
-const { HttpError, createToken, jimp } = require("../helpers");
+const { HttpError, createToken } = require("../helpers");
 const { User } = require("../models/user");
 const bcrypt = require("bcrypt");
 const fs = require("fs/promises");
 const path = require("path");
 const gravatar = require("gravatar");
 const userAvatarDir = path.resolve("public", "avatars");
+const Jimp = require("jimp");
 
 const register = async (req, res) => {
-  // const { path: tempUpload, filename } = req.file;
-  // const resultUpload = path.join(userAvatarDir, filename);
-  // await fs.rename(tempUpload, resultUpload);
-
   const { email, password } = req.body;
-  console.log("gravatar.url(email); -->", gravatar.url(email));
 
   const user = await User.findOne({ email });
   if (user) {
@@ -108,8 +104,9 @@ const avatarUpdate = async (req, res, next) => {
   try {
     const { path: tempUpload, filename } = req.file;
     const resultUpload = path.join(userAvatarDir, filename);
-    await fs.rename(tempUpload, resultUpload);
-
+    const avatar = await Jimp.read(tempUpload);
+    avatar.resize(250, 250).quality(60).write(resultUpload);
+    await fs.unlink(tempUpload);
     const { _id } = req.user;
 
     const avatarURL = path.join("avatars", filename);
