@@ -16,11 +16,11 @@ const userSchema = new Schema(
       unique: true,
       match: emailRegexp,
     },
-    name: {
-      type: String,
-      required: [true, "Name is required"],
-      unique: false,
-    },
+    // name: {
+    //   type: String,
+    //   required: [true, "Name is required"],
+    //   unique: false,
+    // },
     subscription: {
       type: String,
       enum: ["starter", "pro", "business"],

@@ -29,7 +29,8 @@ const register = async (req, res) => {
     verificationToken,
   });
 
-  const verifyEmail = createVerifyEmail(verificationToken);
+  const verifyEmail = createVerifyEmail(verificationToken, newUser.email);
+
   await sendEmail(verifyEmail);
 
   // const token = createToken(newUser);
@@ -73,7 +74,7 @@ const resendVerifyEmail = async (req, res) => {
     throw HttpError(400, "Verification has already been passed");
   }
 
-  const verifyEmail = createVerifyEmail(user.verificationToken);
+  const verifyEmail = createVerifyEmail(user.verificationToken, user.email);
   await sendEmail(verifyEmail);
   res.json({
     message: "Verification email sent",
